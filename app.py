@@ -104,10 +104,11 @@ def elgamalDecryptPOST():
 
     return json.dumps({
         'error': False,
-        'plaintext': '0x' + (msg[:16]).encode('hex'),
-        'ciphertext': '0x' + (dec[:16]).encode('hex'),
+        'plaintext': '0x' + (dec[:16]).encode('hex'),
+        'ciphertext': '0x' + (msg[:16]).encode('hex'),
         'download': output_path + 'decrypted?' + str(time.time()),
         'time': t / 1000,
+        'size': len(dec),
     })
 
 @app.route("/elgamal/encrypt", methods=['GET'])
@@ -144,16 +145,17 @@ def elgamalEncryptPOST():
         msg = f.read()
 
     # encrypt
-    dec, t = encrypt(pubKey, msg)
+    enc, t = encrypt(pubKey, msg)
     with open(filepath + 'encrypted.txt', 'w') as f:
-        f.write(dec)
+        f.write(enc)
 
     return json.dumps({
         'error': False,
         'plaintext': '0x' + (msg[:16]).encode('hex'),
-        'ciphertext': '0x' + (dec[:16]).encode('hex'),
+        'ciphertext': '0x' + (enc[:16]).encode('hex'),
         'download': output_path + 'encrypted.txt?' + str(time.time()),
         'time': t / 1000,
+        'size': len(enc),
     })
 
 if __name__ == "__main__":
