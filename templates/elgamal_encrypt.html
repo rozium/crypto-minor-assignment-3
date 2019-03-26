@@ -195,7 +195,7 @@
         <div id="plaintext" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
         <div id="ciphertext" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
         <div id="time" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
-        <div id="size" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <div id="ssize" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
         <a id="download" class="download card upload submit" download">Download Encrypted File</a>
       </div>
     </div>
@@ -263,6 +263,7 @@
           $("#ciphertext").html('16 byte pertama ciphertext (dalam hex): <b>' + JSON.parse(response).ciphertext + '...</b>');
           $('#download').attr('href', JSON.parse(response).download);
           $("#time").html('Waktu encrypt: <b>' + JSON.parse(response).time + ' ms</b>');
+          $("#ssize").html('Ukuran file: <b>' + JSON.parse(response).size + ' bytes</b>');
         }
       },
       error: function(error) {
