@@ -75,7 +75,7 @@ def elgamalDecryptPOST():
     if 'file' not in request.files or 'privKey' not in request.files:
         return json.dumps({
             'error': True,
-            'data': 'File or Public Key not Found!',
+            'data': 'File or Private Key not Found!',
         })
 
     # check file extension
@@ -84,10 +84,10 @@ def elgamalDecryptPOST():
     if os.path.splitext(privKey.filename)[1] != '.pri':
         return json.dumps({
             'error': True,
-            'data': 'Public Key must be in .pri format',
+            'data': 'Private Key must be in .pri format',
         })
 
-    # load File and Public Key
+    # load File and Private Key
     filepath = app.root_path + output_path
     file.save(filepath + 'temp')
     privKey.save(filepath + 'kunci.pri')
@@ -96,10 +96,9 @@ def elgamalDecryptPOST():
     privKey = json.loads(privKey, object_hook=lambda d: Namespace(**d))
     with open(filepath + 'temp', 'r') as f:
         msg = f.read()
-
     # decrypt
     dec, t = decrypt(privKey, msg)
-    with open(filepath + 'decrypted', 'w') as f:
+    with open(filepath + 'decrypted', 'wb') as f:
         f.write(dec)
 
     return json.dumps({
@@ -141,9 +140,8 @@ def elgamalEncryptPOST():
     with open(filepath + 'kunci.pub', 'r') as f:
         pubKey = json.load(f)
     pubKey = json.loads(pubKey, object_hook=lambda d: Namespace(**d))
-    with open(filepath + 'temp', 'r') as f:
+    with open(filepath + 'temp', 'rb') as f:
         msg = f.read()
-
     # encrypt
     enc, t = encrypt(pubKey, msg)
     with open(filepath + 'encrypted.txt', 'w') as f:
