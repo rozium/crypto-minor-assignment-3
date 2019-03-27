@@ -124,12 +124,11 @@
       color: red;
     }
 
-    .playback {
-      margin-left: 10px;
+    .videoo {
+      height: auto;
     }
 
     .download {
-      margin: 10px 20px 20px;
       text-decoration: none;
     }
 
@@ -143,7 +142,7 @@
   <div class="container">
     <div class="row">
       <div class="title">
-        <h3>ECCEG Encryption</h3>
+        <h3>ECC ElGamal Encryption</h3>
       </div>
     </div>
     <div class="row">
@@ -152,11 +151,11 @@
         
         <div>
           <label class="card upload">
-            <input id="file" type="file" accept=".wav" onchange="loadFile(event)" name="file">
-            Pilih Cover Audio
+            <input id="file" type="file" accept="*" onchange="loadFile(event)" name="file">
+            Pilih file yang ingin dienkripsi
           </label>
           <div class="info hidden" id="outputbef">
-            <img src="/static/icon/wav.png" class="icons">
+            <img src="/static/file.png" class="icons">
             <div class="detail">
               <div class="font-weight-bold">Nama</div>
               <div id="name"></div>
@@ -168,8 +167,8 @@
 
         <div class="hidden" id="msg">
           <label class="card upload">
-            <input id="file" type="file" onchange="loadMsg(event)" name="msg_file">
-            Pilih Pesan
+            <input id="file" type="file" accept=".pub" onchange="loadMsg(event)" name="pubKey">
+            Pilih Public Key
           </label>
           <div class="info hidden" id="outputbefmsg">
             <img id="msg-icon" class="icons">
@@ -182,36 +181,7 @@
           </div>
         </div>
 
-        <div class="hidden" id="enkripsi">
-          <div class="subtitle">Enkripsi Pesan?</div>
-          <div class="radioContainer">
-            <label id="enkripsi-radio1" class="radio checked">&nbsp;&nbsp;Ya&nbsp;&nbsp;
-              <input type="radio" onclick="check(1, 1)" name="enkripsi" value="1" checked="checked">
-            </label>
-            <label id="enkripsi-radio2" class="radio">&nbsp;&nbsp;Tidak&nbsp;&nbsp;
-              <input type="radio" onclick="check(2, 1)" name="enkripsi" value="0">
-            </label>
-          </div>
-        </div>
-
-        <div class="hidden" id="method">
-          <div class="subtitle">Metode Penyisipan Pesan</div>
-          <div class="radioContainer">
-            <label id="method-radio1" class="radio checked">&nbsp;&nbsp;Sekuensial&nbsp;&nbsp;
-              <input type="radio" onclick="check(1, 2)" name="method" value="0" checked="checked">
-            </label>
-            <label id="method-radio2" class="radio">&nbsp;&nbsp;Acak&nbsp;&nbsp;
-              <input type="radio" onclick="check(2, 2)" name="method" value="1">
-            </label>
-          </div>
-        </div>
-
-        <div class="hidden" id="kunci">
-          <div class="subtitle">Masukkan Kunci <span style="color: grey; font-weight: 100">(Panjang maksimal 25 karakter)</span></div>
-          <input type="text" class="form-control" name="kunci" placeholder="secretkey" maxlength="25" />
-        </div>
-
-        <input id="submit" type="submit" class="card upload submit hidden" value="Sisipkan Pesan">
+        <input id="submit" type="submit" class="card upload submit hidden" value="Encrypt Message">
 
       </form>
     </div>
@@ -220,22 +190,12 @@
       <br /><div id="loading" class="subtitle">Loading...</div>
       <br /><div id="error" class="error">Error</div>
       <div id="success">
-        <div id="cover-audio-sub" class="subtitle">Cover Audio</div>
-        <div class="playback">
-          <audio id="ca" controls style="width: 100%">
-            <source id="cover-audio" src="" type="audio/wav">
-            Your browser does not support HTML5 audio.
-          </audio>
-        </div>
-        <div id="stego-audio-sub" class="subtitle">Stego Audio</div>
-        <div class="playback">
-          <audio id="sa" controls style="width: 100%">
-            <source id="stego-audio" src="" type="audio/wav">
-            Your browser does not support HTML5 audio.
-          </audio>
-        </div>
-        <div id="PSNR" class="subtitle">PSNR: </div>
-        <a id="stego-audio-download" class="download card upload submit" download">Download Stego Audio</a>
+        <div id="cover-video-sub" class="subtitle">Result:</div>
+        <div id="plaintext" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <div id="ciphertext" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <div id="time" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <div id="ssize" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <a id="download" class="download card upload submit" download">Download Encrypted File</a>
       </div>
     </div>
   </div>
@@ -258,10 +218,6 @@
     name.innerHTML = file.name;
     size.innerHTML = file.size + ' bytes';
 
-    document.getElementById('enkripsi').classList.remove("hidden");
-    document.getElementById('method').classList.remove("hidden");
-    document.getElementById('kunci').classList.remove("hidden");
-    document.getElementById('submit').classList.remove("hidden");
     document.getElementById('msg').classList.remove("hidden");
   };
 
@@ -272,35 +228,14 @@
     var size = document.getElementById('msg-size');
     name.innerHTML = file.name;
     size.innerHTML = file.size + ' bytes';
-    $('#msg-icon').attr('src', '/static/icon/' + file.name.split('.').pop() + '.png');
-    $('#msg-icon').attr('alt', file.name.split('.').pop());
+    $('#msg-icon').attr('src', '/static/key.png');
+    document.getElementById('submit').classList.remove("hidden");
   };
-
-  var opt = [1, 1];
-
-  var check = function(id, op) {
-    var text;
-    if (op == 1) {
-      text = 'enkripsi-';
-    } else if (op == 2) {
-      text = 'method-';
-    }
-    var radio = document.getElementById(text + 'radio' + opt[op-1]).classList.remove("checked");
-    var radio = document.getElementById(text + 'radio' + id).classList.add("checked");
-    opt[op-1] = id;
-  };
-
-  function changeSource(id, url) {
-    var audio = document.getElementById(id);
-    audio.src = url;
-    // audio.play();
-    // audio.load();
-  }
 
   $('#submit').click(function() {
     var formData = new FormData($('form')[0]);
     $.ajax({
-      url: '/audio/embed',
+      url: '/ecceg/encrypt',
       type: 'POST',
       data: formData,
       processData: false,
@@ -323,10 +258,11 @@
         } else {
           $("#error").hide();
           $("#success").show();
-          $('#stego-audio-download').attr('href', JSON.parse(response).stego_audio);
-          $("#PSNR").html('Kualitas Audio (PSNR): ' + JSON.parse(response).psnr + ' dB');
-          changeSource('ca', JSON.parse(response).cover_audio);
-          changeSource('sa', JSON.parse(response).stego_audio);
+          $("#plaintext").html('16 byte pertama plaintext (dalam hex): <b>' + JSON.parse(response).plaintext + '...</b>');
+          $("#ciphertext").html('16 byte pertama ciphertext (dalam hex): <b>' + JSON.parse(response).ciphertext + '...</b>');
+          $('#download').attr('href', JSON.parse(response).download);
+          $("#time").html('Waktu encrypt: <b>' + JSON.parse(response).time + ' ms</b>');
+          $("#ssize").html('Ukuran file: <b>' + JSON.parse(response).size + ' bytes</b>');
         }
       },
       error: function(error) {

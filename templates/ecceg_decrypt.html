@@ -67,11 +67,40 @@
       display: none;
     }
 
+    .radioContainer {
+      width: 95%;
+      margin: 2px 10px;
+    }
+
     .subtitle {
       margin-left: 10px;
       margin-top: 20px;
       padding: 3px;
       font-weight: bolder;
+    }
+
+    .radio {
+      margin: 1px;
+      padding: 8px 6px;
+      cursor: pointer;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2);
+      background-color: #f6e58d;
+    }
+
+    .radio.checked {
+      background-color: #f0932b;
+      color: white;
+    }
+
+    .radio input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .radio:hover {
+      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
     }
 
     .submit {
@@ -95,8 +124,16 @@
       color: red;
     }
 
-    #success {
-      width: 100%;
+    .videoo {
+      height: auto;
+    }
+
+    .download {
+      text-decoration: none;
+    }
+
+    .download:hover {
+      color: white;
     }
 
   </style>
@@ -105,7 +142,7 @@
   <div class="container">
     <div class="row">
       <div class="title">
-        <h3>ECCEG Decryption</h3>
+        <h3>ECC ElGamal Decryption</h3>
       </div>
     </div>
     <div class="row">
@@ -114,11 +151,11 @@
         
         <div>
           <label class="card upload">
-            <input id="file" type="file" accept=".wav" onchange="loadFile(event)" name="file">
-            Pilih Stego Audio
+            <input id="file" type="file" accept="*" onchange="loadFile(event)" name="file">
+            Pilih file yang ingin didekripsi
           </label>
           <div class="info hidden" id="outputbef">
-            <img id="icon" class="icons">
+            <img src="/static/file.png" class="icons">
             <div class="detail">
               <div class="font-weight-bold">Nama</div>
               <div id="name"></div>
@@ -128,12 +165,23 @@
           </div>
         </div>
 
-        <div class="hidden" id="kunci">
-          <div class="subtitle">Masukkan Kunci <span style="color: grey; font-weight: 100">(Panjang maksimal 25 karakter)</span></div>
-          <input type="text" class="form-control" name="kunci" placeholder="secretkey" maxlength="25" />
+        <div class="hidden" id="msg">
+          <label class="card upload">
+            <input id="file" type="file" accept=".pri" onchange="loadMsg(event)" name="privKey">
+            Pilih Private Key
+          </label>
+          <div class="info hidden" id="outputbefmsg">
+            <img id="msg-icon" class="icons">
+            <div class="detail">
+              <div class="font-weight-bold">Nama</div>
+              <div id="msg-name"></div>
+              <div class="font-weight-bold mt-2">Ukuran</div>
+              <div id="msg-size"></div>
+            </div>
+          </div>
         </div>
 
-        <input id="submit" type="submit" class="card upload submit hidden" value="Ekstrak Pesan">
+        <input id="submit" type="submit" class="card upload submit hidden" value="Decrypt Message">
 
       </form>
     </div>
@@ -142,10 +190,12 @@
       <br /><div id="loading" class="subtitle">Loading...</div>
       <br /><div id="error" class="error">Error</div>
       <div id="success">
-        <div id="result" class="subtitle"></div>
-        <div class="download card upload submit">
-          <a id="message-file" style="text-decoration: none; color: white" download">Download Pesan</a>
-        </div>
+        <div id="cover-video-sub" class="subtitle">Result:</div>
+        <div id="plaintext" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <div id="ciphertext" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <div id="time" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <div id="ssize" style="margin-top: 0px;font-weight: normal" class="subtitle"></div>
+        <a id="download" class="download card upload submit" download">Download Decrypted File</a>
       </div>
     </div>
   </div>
@@ -167,18 +217,25 @@
     var size = document.getElementById('size');
     name.innerHTML = file.name;
     size.innerHTML = file.size + ' bytes';
-    
-    $('#icon').attr('src', '/static/icon/' + file.name.split('.').pop() + '.png');
-    $('#icon').attr('alt', file.name.split('.').pop());
 
-    document.getElementById('kunci').classList.remove("hidden");
+    document.getElementById('msg').classList.remove("hidden");
+  };
+
+  var loadMsg = function(event) {
+    document.getElementById('outputbefmsg').classList.remove("hidden");
+    var file = event.target.files[0];
+    var name = document.getElementById('msg-name');
+    var size = document.getElementById('msg-size');
+    name.innerHTML = file.name;
+    size.innerHTML = file.size + ' bytes';
+    $('#msg-icon').attr('src', '/static/key.png');
     document.getElementById('submit').classList.remove("hidden");
   };
 
   $('#submit').click(function() {
     var formData = new FormData($('form')[0]);
     $.ajax({
-      url: '/audio/extract',
+      url: '/ecceg/decrypt',
       type: 'POST',
       data: formData,
       processData: false,
@@ -201,8 +258,11 @@
         } else {
           $("#error").hide();
           $("#success").show();
-          $('#message-file').attr('href', JSON.parse(response).msg_file);
-          $('#result').html('File: output' + JSON.parse(response).msg_ext);
+          $("#plaintext").html('16 byte pertama plaintext (dalam hex): <b>' + JSON.parse(response).plaintext + '...</b>');
+          $("#ciphertext").html('16 byte pertama ciphertext (dalam hex): <b>' + JSON.parse(response).ciphertext + '...</b>');
+          $('#download').attr('href', JSON.parse(response).download);
+          $("#time").html('Waktu decrypt: <b>' + JSON.parse(response).time + ' ms</b>');
+          $("#ssize").html('Ukuran file: <b>' + JSON.parse(response).size + ' bytes</b>');
         }
       },
       error: function(error) {
