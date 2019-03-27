@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 from elgamal import *
+from ecceg import ECCEG
 import time
 import os, json
 from random import randint
@@ -9,6 +10,7 @@ app = Flask(__name__)
 app.config['ROOT_PATH'] = app.root_path
 
 output_path = '/static/output/'
+ecceg_ = ECCEG()
 
 @app.route("/")
 def main():
@@ -20,31 +22,111 @@ def eccegGET():
 
 @app.route("/ecceg/genkey", methods=['POST'])
 def eccegGenKey():
-    # pubKey, privKey = genKeys()
+    privKey, pubKey = ecceg_.generate_key()
 
-    # filepath = app.root_path + output_path
-    # with open(filepath + 'kunci.pub', 'w') as jf: json.dump(json.dumps(pubKey.__dict__), jf)
-    # with open(filepath + 'kunci.pri', 'w') as jf: json.dump(json.dumps(privKey.__dict__), jf)
+    filepath = app.root_path + output_path
+    with open(filepath + 'kunci.pub', 'w') as jf:
+        json.dump({'public_key': pubKey}, jf)
+    with open(filepath + 'kunci.pri', 'w') as jf:
+        json.dump({'private_key': privKey}, jf)
     
     return json.dumps({
         'error': False,
-        # 'pubKey': output_path + 'kunci.pub?' + str(time.time()),
-        # 'priKey': output_path + 'kunci.pri?' + str(time.time()),
+        'pubKey': output_path + 'kunci.pub?' + str(time.time()),
+        'priKey': output_path + 'kunci.pri?' + str(time.time()),
     })
 
 @app.route("/ecceg/decrypt", methods=['GET'])
 def eccegDecryptGET():
     return render_template('ecceg_decrypt.html')
 
-# @app.route("/ecceg/decrypt", methods=['POST'])
-# def eccegDecryptPOST():
+@app.route("/ecceg/decrypt", methods=['POST'])
+def eccegDecryptPOST():
+    # check file and public key
+    if 'file' not in request.files or 'privKey' not in request.files:
+        return json.dumps({
+            'error': True,
+            'data': 'File or Private Key not Found!',
+        })
+
+    # check file extension
+    file = request.files['file']
+    privKey = request.files['privKey']
+    if os.path.splitext(privKey.filename)[1] != '.pri':
+        return json.dumps({
+            'error': True,
+            'data': 'Private Key must be in .pri format',
+        })
+
+    # load File and Private Key
+    filepath = app.root_path + output_path
+    file.save(filepath + 'temp')
+    privKey.save(filepath + 'kunci.pri')
+    with open(filepath + 'kunci.pri', 'r') as f:
+        privKey = json.load(f)
+
+    privKey = privKey['private_key']
+    with open(filepath + 'temp', 'r') as f:
+        msg = f.read()
+    # decrypt
+    dec, t =  ecceg_.decrypt(privKey, msg)
+    with open(filepath + 'decrypted', 'wb') as f:
+        f.write(dec)
+
+    return json.dumps({
+        'error': False,
+        'plaintext': '0x' + (dec[:16]).encode('hex'),
+        'ciphertext': '0x' + (msg[:16]).encode('hex'),
+        'download': output_path + 'decrypted?' + str(time.time()),
+        'time': t / 1000,
+        'size': len(dec),
+    })
     
 @app.route("/ecceg/encrypt", methods=['GET'])
 def eccegEncryptGET():
     return render_template('ecceg_encrypt.html')
 
-# @app.route("/ecceg/encrypt", methods=['POST'])
-# def eccegEncryptPOST():
+@app.route("/ecceg/encrypt", methods=['POST'])
+def eccegEncryptPOST():
+    # check file and public key
+    if 'file' not in request.files or 'pubKey' not in request.files:
+        return json.dumps({
+            'error': True,
+            'data': 'File or Public Key not Found!',
+        })
+
+    # check file extension
+    file = request.files['file']
+    pubKey = request.files['pubKey']
+    if os.path.splitext(pubKey.filename)[1] != '.pub':
+        return json.dumps({
+            'error': True,
+            'data': 'Public Key must be in .pub format',
+        })
+
+    # load File and Public Key
+    filepath = app.root_path + output_path
+    file.save(filepath + 'temp')
+    pubKey.save(filepath + 'kunci.pub')
+    with open(filepath + 'kunci.pub', 'r') as f:
+        pubKey = json.load(f)
+
+    pubKey = (pubKey['public_key'][0], pubKey['public_key'][1])
+    with open(filepath + 'temp', 'rb') as f:
+        msg = f.read()
+    # encrypt
+    enc, t = ecceg_.encrypt(pubKey, msg)
+    with open(filepath + 'encrypted.txt', 'w') as f:
+        f.write(enc)
+
+    return json.dumps({
+        'error': False,
+        'plaintext': '0x' + (msg[:16]).encode('hex'),
+        'ciphertext': '0x' + (enc[:16]).encode('hex'),
+        'download': output_path + 'encrypted.txt?' + str(time.time()),
+        'time': t / 1000,
+        'size': len(enc),
+    })
 
 @app.route("/elgamal", methods=['GET'])
 def elgamalGET():

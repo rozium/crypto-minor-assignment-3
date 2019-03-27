@@ -1,5 +1,6 @@
 from random import randint
 from math import floor
+from datetime import datetime as dt
 
 INF = float('inf')
 
@@ -117,30 +118,34 @@ class ECCEG:
     # char_as_cip is tuple of point
     return self.subtract_2_points(char_as_cip[1], self.multiply_with_point(private_key, char_as_cip[0]))
 
-  def encrypt(self, public_key, plain_text):
+  def encrypt(self, public_key, plain_text, cipher_path=''):
     # plain_text is string
-    cipher = []
+    t1 = dt.now()
+    cipher = ''
     for char in plain_text:
       char_as_point = self.encode(char)
       char_as_cip = self.encrypt_point(char_as_point, public_key)
-      cipher.append(char_as_cip[0][0])
-      cipher.append(char_as_cip[0][1])
-      cipher.append(char_as_cip[1][0])
-      cipher.append(char_as_cip[1][1])
+      cipher += str(char_as_cip[0][0]) + ' '
+      cipher += str(char_as_cip[0][1]) + ' '
+      cipher += str(char_as_cip[1][0]) + ' '
+      cipher += str(char_as_cip[1][1]) + ' '
+
+    print cipher
+
+    # remove last space
+    cipher = cipher[:-1]
 
     # save to file
-    with open('cipher.txt', 'wb') as f:
-      for c in cipher:
-        if c == cipher[-1]:
-          f.write("%s" % c)
-        else:
-          f.write("%s " % c)
+    if cipher_path != '':
+      with open(cipher_path, 'wb') as f:
+        f.write(cipher)
 
-    return cipher
+    t2 = dt.now()
+    return cipher, (t2-t1).microseconds
 
-  def decrypt(self, private_key, cipher_text):
+  def decrypt(self, private_key, cipher_text, plain_path=''):
     # cipher_text is array of points (ungrouped to pair)
-
+    t1 = dt.now()
     # grouping cipher points
     points = cipher_text.split(' ')
     cipher = []
@@ -157,7 +162,9 @@ class ECCEG:
       plain_text += plain_char
 
     # save to file
-    with open('plain.txt', 'wb') as f:
-      f.write(plain_text)
+    if plain_path != '':
+      with open(plain_path, 'wb') as f:
+        f.write(plain_text)
 
-    return plain_text
+    t2 = dt.now()
+    return plain_text, (t2-t1).microseconds
